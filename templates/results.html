@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Résultats</title>
+</head>
+<body>
+    <h1>Résultats du Planning Poker</h1>
+    <table border="1">
+        <tr>
+            <th>Nom</th>
+            <th>Description</th>
+            <th>Estimation</th>
+            <th>Votes</th>
+        </tr>
+        {% for feature in backlog %}
+        <tr>
+            <td>{{ feature['name'] }}</td>
+            <td>{{ feature['description'] }}</td>
+            <td>{{ feature.get('difficulty', 'Non estimé') }}</td>
+            <td>
+                {% for player, vote in feature.get('votes', {}).items() %}
+                    {{ player }}: {{ vote }}<br>
+                {% endfor %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    <a href="/">Retour à l'accueil</a>
+</body>
+</html>

@@ -23,11 +23,10 @@ def load_save():
         return json.load(file)
 
 def calculate_estimation(votes, mode):
-    estimates = list(map(int, votes.values()))
+    estimates = list(votes.values())
+    
 
-    if mode == 'strict':
-        return estimates[0] if all(v == estimates[0] for v in estimates) else None
-    elif mode == 'moyenne':
+    if mode == 'moyenne':
         return sum(estimates) // len(estimates)
     elif mode == 'médiane':
         estimates.sort()
@@ -38,3 +37,5 @@ def calculate_estimation(votes, mode):
         return max(set(estimates), key=estimates.count)
 
     return None
+
+

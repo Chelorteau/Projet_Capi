@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vote pour {{ player }}</title>
+</head>
+<body>
+    <h1>{{ player }}, votez pour la fonctionnalité : {{ feature['name'] + ' (' + feature['description'] + ')'}}</h1>
+    <form method="POST" action="/submit_vote/{{ player }}">
+        <button type="submit" name="vote" value="0">0</button>
+        <button type="submit" name="vote" value="1">1</button>
+        <button type="submit" name="vote" value="2">2</button>
+        <button type="submit" name="vote" value="3">3</button>
+        <button type="submit" name="vote" value="5">5</button>
+        <button type="submit" name="vote" value="8">8</button>
+        <button type="submit" name="vote" value="13">13</button>
+        <button type="submit" name="vote" value="20">20</button>
+        <button type="submit" name="vote" value="40">40</button>
+        <button type="submit" name="vote" value="100">100</button>
+        <button type="submit" name="vote" value="cafe">cafe</button>
+        <button type="submit" name="vote" value="?">?</button>
+    </form>
+</body>
+</html>

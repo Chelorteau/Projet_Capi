@@ -1,17 +1,65 @@
 <!DOCTYPE html>
+<!--actuellement pas utilisé -->
 <html>
 <head>
     <title>Partie en cours</title>
+    <style>
+        .card {
+            display: inline-block;
+            margin: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: scale(1.1);
+        }
+        .player-container {
+            margin-bottom: 20px;
+        }
+    </style>
+    <script>
+        function submitVote(player, value) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/vote';
+            
+            const playerInput = document.createElement('input');
+            playerInput.type = 'hidden';
+            playerInput.name = 'player';
+            playerInput.value = player;
+            
+            const voteInput = document.createElement('input');
+            voteInput.type = 'hidden';
+            voteInput.name = 'vote';
+            voteInput.value = value;
+            
+            form.appendChild(playerInput);
+            form.appendChild(voteInput);
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+    </script>
 </head>
 <body>
     <h1>Estimation de la fonctionnalité : {{ feature['name'] }}</h1>
-    <form method="POST" action="/vote">
-        {% for player in players %}
-        <label>{{ player }} :</label>
-        <input type="number" name="vote" required>
-        <input type="hidden" name="player" value="{{ player }}">
-        <button type="submit">Valider</button><br>
-        {% endfor %}
-    </form>
+    
+    {% for player in players %}
+    <div class="player-container">
+        <h3>{{ player }}, choisissez une carte :</h3>
+        <img src="/static/cartes_0.svg" class="card" onclick="submitVote('{{ player }}', 0)" alt="Carte 0" />
+        <img src="/static/cartes_1.svg" class="card" onclick="submitVote('{{ player }}', 1)" alt="Carte 1" />
+        <img src="/static/cartes_2.svg" class="card" onclick="submitVote('{{ player }}', 2)" alt="Carte 2" />
+        <img src="/static/cartes_3.svg" class="card" onclick="submitVote('{{ player }}', 3)" alt="Carte 3" />
+        <img src="/static/cartes_5.svg" class="card" onclick="submitVote('{{ player }}', 5)" alt="Carte 5" />
+        <img src="/static/cartes_8.svg" class="card" onclick="submitVote('{{ player }}', 8)" alt="Carte 8" />
+        <img src="/static/cartes_13.svg" class="card" onclick="submitVote('{{ player }}', 13)" alt="Carte 13" />
+        <img src="/static/cartes_20.svg" class="card" onclick="submitVote('{{ player }}', '20')" alt="Carte 20" />
+        <img src="/static/cartes_40.svg" class="card" onclick="submitVote('{{ player }}', '40')" alt="Carte 40" />
+        <img src="/static/cartes_100.svg" class="card" onclick="submitVote('{{ player }}', '100')" alt="Carte 100" />
+        <img src="/static/cartes_cafe.svg" class="card" onclick="submitVote('{{ player }}', 'cafe')" alt="Carte cafe" />
+        <img src="/static/cartes_interro.svg" class="card" onclick="submitVote('{{ player }}', 'interro')" alt="Carte interro" />
+    </div>
+    {% endfor %}
 </body>
 </html>
