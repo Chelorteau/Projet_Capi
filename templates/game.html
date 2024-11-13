@@ -1,65 +1,82 @@
 <!DOCTYPE html>
-<!--actuellement pas utilisé -->
 <html>
 <head>
-    <title>Partie en cours</title>
+    <title>Vote pour la fonctionnalité</title>
     <style>
-        .card {
-            display: inline-block;
-            margin: 10px;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        .card:hover {
-            transform: scale(1.1);
-        }
-        .player-container {
-            margin-bottom: 20px;
-        }
+        .highlight { background-color: yellow; }
     </style>
     <script>
-        function submitVote(player, value) {
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '/vote';
-            
-            const playerInput = document.createElement('input');
-            playerInput.type = 'hidden';
-            playerInput.name = 'player';
-            playerInput.value = player;
-            
-            const voteInput = document.createElement('input');
-            voteInput.type = 'hidden';
-            voteInput.name = 'vote';
-            voteInput.value = value;
-            
-            form.appendChild(playerInput);
-            form.appendChild(voteInput);
-            
-            document.body.appendChild(form);
-            form.submit();
+        function submitVote(vote) {
+            fetch('/submit_vote', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'vote=' + vote
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.all_ready) startCountdown();
+            })
+            .catch(error => console.error('Erreur lors de l\'envoi du vote:', error));
         }
+
+        function checkVotes() {
+            fetch('/check_votes/{{ game_key }}')
+                .then(response => response.json())
+                .then(data => updateVotes(data.votes, data.all_ready))
+                .catch(error => console.error('Erreur lors de la vérification des votes:', error));
+        }
+
+        function updateVotes(votes, allReady) {
+            const votesList = document.getElementById('votesList');
+            votesList.innerHTML = '';
+            for (const [player, vote] of Object.entries(votes)) {
+                const li = document.createElement('li');
+                li.textContent = `${player}: ${vote}`;
+                votesList.appendChild(li);
+            }
+
+            if (allReady) startCountdown();
+        }
+
+        let countdown = 3;
+        let timer;
+
+        function startCountdown() {
+            if (timer) return;
+            timer = setInterval(() => {
+                document.getElementById('countdown').textContent = countdown;
+                countdown--;
+                if (countdown < 0) {
+                    clearInterval(timer);
+                    window.location.href = '/game';
+                }
+            }, 1000);
+        }
+
+        setInterval(checkVotes, 1000);
     </script>
 </head>
 <body>
-    <h1>Estimation de la fonctionnalité : {{ feature['name'] }}</h1>
+    <h1>Fonctionnalité : {{ feature['name'] }}</h1>
+    <h2>Description : {{ feature['description'] }}</h2>
     
-    {% for player in players %}
-    <div class="player-container">
-        <h3>{{ player }}, choisissez une carte :</h3>
-        <img src="/static/cartes_0.svg" class="card" onclick="submitVote('{{ player }}', 0)" alt="Carte 0" />
-        <img src="/static/cartes_1.svg" class="card" onclick="submitVote('{{ player }}', 1)" alt="Carte 1" />
-        <img src="/static/cartes_2.svg" class="card" onclick="submitVote('{{ player }}', 2)" alt="Carte 2" />
-        <img src="/static/cartes_3.svg" class="card" onclick="submitVote('{{ player }}', 3)" alt="Carte 3" />
-        <img src="/static/cartes_5.svg" class="card" onclick="submitVote('{{ player }}', 5)" alt="Carte 5" />
-        <img src="/static/cartes_8.svg" class="card" onclick="submitVote('{{ player }}', 8)" alt="Carte 8" />
-        <img src="/static/cartes_13.svg" class="card" onclick="submitVote('{{ player }}', 13)" alt="Carte 13" />
-        <img src="/static/cartes_20.svg" class="card" onclick="submitVote('{{ player }}', '20')" alt="Carte 20" />
-        <img src="/static/cartes_40.svg" class="card" onclick="submitVote('{{ player }}', '40')" alt="Carte 40" />
-        <img src="/static/cartes_100.svg" class="card" onclick="submitVote('{{ player }}', '100')" alt="Carte 100" />
-        <img src="/static/cartes_cafe.svg" class="card" onclick="submitVote('{{ player }}', 'cafe')" alt="Carte cafe" />
-        <img src="/static/cartes_interro.svg" class="card" onclick="submitVote('{{ player }}', 'interro')" alt="Carte interro" />
+    <div id="votesList"></div>
+    
+    <div>
+        <button onclick="submitVote(0)" value="0">0</button>
+        <button onclick="submitVote(1)" value="1">1</button>
+        <button onclick="submitVote(2)" value="2">2</button>
+        <button onclick="submitVote(3)" value="3">3</button>
+        <button onclick="submitVote(5)" value="5">5</button>
+        <button onclick="submitVote(8)" value="8">8</button>
+        <button onclick="submitVote(13)" value="13">13</button>
+        <button onclick="submitVote(20)" value="20">20</button>
+        <button onclick="submitVote(40)" value="40">40</button>
+        <button onclick="submitVote(100)" value="100">100</button>
+        <button onclick="submitVote('cafe')" value="cafe">Café</button>
+        <button onclick="submitVote('?')" value="?">?</button>
     </div>
-    {% endfor %}
+
+    <h2 id="countdown"></h2>
 </body>
 </html>

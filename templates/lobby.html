@@ -1,7 +1,54 @@
-<h1>Partie créée avec la clé : {{ game_key }}</h1>
-<h2>Joueurs :</h2>
-<ul>
-    {% for player in players %}
-    <li>{{ player }}</li>
-    {% endfor %}
-</ul>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lobby</title>
+    <script>
+        function toggleReady() {
+            fetch('/toggle_ready', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.all_ready) {
+                        startCountdown();
+                    }
+                });
+        }
+
+        function checkAllReady() {
+            fetch(`/check_all_ready/{{ game_key }}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.all_ready) {
+                        startCountdown();
+                    }
+                });
+        }
+
+        let countdown = 3;
+        let timer;
+
+        function startCountdown() {
+            if (timer) return;
+            timer = setInterval(() => {
+                document.getElementById('countdown').textContent = countdown;
+                countdown--;
+                if (countdown < 0) {
+                    clearInterval(timer);
+                    window.location.href = '/game';
+                }
+            }, 1000);
+        }
+
+        setInterval(checkAllReady, 2000);
+    </script>
+</head>
+<body>
+    <h1>Lobby - Clé de la partie : {{ game_key }}</h1>
+    <ul>
+        {% for player, info in players.items() %}
+        <li>{{ player }} - {{ "Prêt" if info['ready'] else "Pas prêt" }}</li>
+        {% endfor %}
+    </ul>
+    <button onclick="toggleReady()">Je suis prêt</button>
+    <h2 id="countdown"></h2>
+</body>
+</html>

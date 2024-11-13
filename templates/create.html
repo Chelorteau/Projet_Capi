@@ -1,3 +1,23 @@
-<form method="POST">
-    <button type="submit">Créer une nouvelle partie</button>
-</form>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Créer une nouvelle partie</title>
+</head>
+<body>
+    <h1>Créer une nouvelle partie</h1>
+    <form method="POST">
+        <label>Votre pseudo :</label><br>
+        <input type="text" name="player_name" required><br><br>
+        
+        <label>Choisissez le mode de calcul :</label><br>
+        <select name="mode" required>
+            <option value="moyenne">Moyenne</option>
+            <option value="médiane">Médiane</option>
+            <option value="majorité_absolue">Majorité absolue</option>
+            <option value="majorité_relative">Majorité relative</option>
+        </select><br><br>
+        
+        <button type="submit">Créer la partie</button>
+    </form>
+</body>
+</html>
