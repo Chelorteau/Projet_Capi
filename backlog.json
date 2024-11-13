@@ -1,0 +1,7 @@
+{
+  "features": [
+    {"id": 1, "name": "Feature A", "description": "Implement login system"},
+    {"id": 2, "name": "Feature B", "description": "Develop user profile"},
+    {"id": 3, "name": "Feature C", "description": "Add chat functionality"}
+  ]
+}

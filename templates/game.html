@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Partie en cours</title>
+</head>
+<body>
+    <h1>Estimation de la fonctionnalité : {{ feature['name'] }}</h1>
+    <form method="POST" action="/vote">
+        {% for player in players %}
+        <label>{{ player }} :</label>
+        <input type="number" name="vote" required>
+        <input type="hidden" name="player" value="{{ player }}">
+        <button type="submit">Valider</button><br>
+        {% endfor %}
+    </form>
+</body>
+</html>
