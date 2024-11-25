@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Planning Poker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
 </head>
 <body>
     <h1>Bienvenue au Planning Poker</h1>
@@ -14,3 +15,18 @@
     </form>
 </body>
 </html>
+<script>
+    const socket = io();
+
+    function sendMessage() {
+        const message = document.getElementById("message").value;
+        socket.send(message);
+        document.getElementById("message").value = '';
+    }
+
+    socket.on("message", (msg) => {
+        const chat = document.getElementById("chat");
+        chat.innerHTML += `<p>${msg}</p>`;
+    });
+</script>
+
