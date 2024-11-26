@@ -1,0 +1,47 @@
+<div id="chat-container" style="border: 1px solid #ccc; padding: 10px; width: 300px; height: 400px; overflow-y: auto;">
+    <h4>Chat</h4>
+    <div id="messages"></div>
+    <input type="text" id="chat-input" placeholder="Tapez un message..." style="width: 100%;">
+    <button id="send-btn">Envoyer</button>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+<script>
+    const socket = io();
+
+    // Rejoindre la salle correspondant à la clé de la partie
+    const gameKey = "{{ game_key }}";
+    socket.emit('join_room', { game_key: gameKey });
+
+    const chatInput = document.getElementById("chat-input");
+    const messagesDiv = document.getElementById("messages");
+
+    document.getElementById("send-btn").addEventListener("click", sendMessage);
+    chatInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") sendMessage();
+    });
+
+    function sendMessage() {
+        const message = chatInput.value.trim();
+        if (message) {
+            socket.emit("message", { game_key: gameKey, message: message });
+            chatInput.value = "";
+        }
+    }
+
+    socket.on("chat_message", (data) => {
+        const newMessage = document.createElement("p");
+        newMessage.textContent = `${data.player}: ${data.message}`;
+        messagesDiv.appendChild(newMessage);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll automatique
+    });
+
+    socket.on("chat_history", (messages) => {
+    messages.forEach((msg) => {
+        const newMessage = document.createElement("p");
+        newMessage.textContent = `${msg.player}: ${msg.message}`;
+        messagesDiv.appendChild(newMessage);
+    });
+    messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll automatique
+});
+
+</script>

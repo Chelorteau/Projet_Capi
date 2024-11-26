@@ -1,4 +1,6 @@
 from flask import Flask, render_template, request, redirect, session, jsonify
+from flask_socketio import SocketIO, send, emit, join_room, leave_room
+
 import random
 import string
 import json
@@ -6,6 +8,50 @@ from utils import load_backlog, save_backlog, calculate_estimation
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
+
+socketio = SocketIO(app) # intialize socketio
+
+# Liste des messages de chat pour chaque partie (optionnel, pour persistance)
+chat_logs = {}
+
+@socketio.on("connect")
+def on_connect():
+    print("Un utilisateur s'est connecté.")
+
+@socketio.on("message")
+def handle_message(data):
+    game_key = data.get('game_key')
+    message = data.get('message')
+    player_name = session.get('player_name', 'Anonyme')
+
+    if not game_key or game_key not in games:
+        return
+
+    # Sauvegarder le message dans les logs de la partie
+    if game_key not in chat_logs:
+        chat_logs[game_key] = []
+    chat_logs[game_key].append({'player': player_name, 'message': message})
+
+    # Diffuser le message à tous les clients de cette partie
+    emit('chat_message', {'player': player_name, 'message': message}, room=game_key)
+
+@socketio.on("join_room")
+def on_join(data):
+    game_key = data.get('game_key')
+    if game_key and game_key in games:
+        join_room(game_key)
+        # Envoyer l'historique des messages au nouvel utilisateur
+        if game_key in chat_logs:
+            emit('chat_history', chat_logs[game_key], room=request.sid)  # Uniquement à l'utilisateur
+        emit('chat_message', {'player': 'Système', 'message': f"{session.get('player_name', 'Un joueur')} a rejoint la partie."}, room=game_key)
+
+
+@socketio.on("leave_room")
+def on_leave(data):
+    game_key = data.get('game_key')
+    if game_key and game_key in games:
+        leave_room(game_key)
+        emit('chat_message', {'player': 'Système', 'message': f"{session.get('player_name', 'Un joueur')} a quitté la partie."}, room=game_key)
 
 games = {}
 
@@ -27,6 +73,7 @@ def reset_game_data():
 def index():
     return render_template('index.html')
 
+
 @app.route('/create', methods=['GET', 'POST'])
 def create():
     if request.method == 'POST':
@@ -46,8 +93,6 @@ def create():
 
         return redirect(f'/lobby/{game_key}')
     return render_template('create.html')
-
-
 
 @app.route('/join', methods=['GET', 'POST'])
 def join():
@@ -165,4 +210,5 @@ def results():
     return render_template('results.html', backlog=game_data['backlog'])
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)
+
