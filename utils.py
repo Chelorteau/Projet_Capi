@@ -23,7 +23,8 @@ def load_save():
         return json.load(file)
 
 def calculate_estimation(votes, mode):
-    estimates = [v for v in votes.values() if v.isdigit()]
+    # Convertir tous les votes en nombres si possible
+    estimates = [int(v) for v in votes.values() if isinstance(v, int) or (isinstance(v, str) and v.isdigit())]
 
     if not estimates:
         return None

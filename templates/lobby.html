@@ -1,56 +1,92 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lobby</title>
     <script>
-        function toggleReady() {
-            fetch('/toggle_ready', { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.all_ready) {
-                        startCountdown();
-                    }
-                });
-        }
-
-        function checkAllReady() {
-            fetch(`/check_all_ready/{{ game_key }}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.all_ready) {
-                        startCountdown();
-                    }
-                });
-        }
-
-        let countdown = 3;
-        let timer;
-
-        function startCountdown() {
-            if (timer) return;
-            timer = setInterval(() => {
-                document.getElementById('countdown').textContent = countdown;
-                countdown--;
-                if (countdown < 0) {
-                    clearInterval(timer);
-                    window.location.href = '/game';
+        function startGame() {
+            fetch('/start_game', {
+                method: 'POST',
+            })
+            .then(response => {
+                if (response.ok) {
+                    console.log("Partie démarrée avec succès !");
+                } else {
+                    response.json().then(data => alert(data.error));
                 }
-            }, 1000);
+            });
         }
 
-        setInterval(checkAllReady, 2000);
+        function uploadFeatures() {
+            const fileInput = document.getElementById('fileInput');
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            fetch('/upload_features', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                const status = document.getElementById('uploadStatus');
+                if (data.success) {
+                    status.textContent = "Fichier importé avec succès !";
+                    //window.location.reload();
+                } else {
+                    status.textContent = `Erreur : ${data.error}`;
+                }
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+            });
+        }
     </script>
 </head>
 <body>
     <h1>Lobby - Clé de la partie : {{ game_key }}</h1>
     <ul>
         {% for player, info in players.items() %}
-        <li>{{ player }} - {{ "Prêt" if info['ready'] else "Pas prêt" }}</li>
+        <li>{{ player }}</li>
         {% endfor %}
     </ul>
-    <button onclick="toggleReady()">Je suis prêt</button>
-    <h2 id="countdown"></h2>
-    {% include "chat.html" %}
-</body>
 
+    {% if session['player_name'] == creator %}
+        <button onclick="startGame()">Démarrer la partie</button>
+    {% endif %}
+
+    {% include "chat.html" %}
+
+    {% if session['player_name'] == creator %}
+        <h3>Importer un fichier JSON pour modifier les fonctionnalités</h3>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <input type="file" name="file" id="fileInput" accept="application/json" required>
+            <button type="button" onclick="uploadFeatures()">Importer</button>
+        </form>
+        <p id="uploadStatus"></p>
+    {% endif %}
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const gameKey = "{{ game_key }}";
+
+        socket.emit('join_room', { game_key: gameKey });
+
+        socket.on('redirect', (data) => {
+            console.log("Redirection vers :", data.redirect_url);
+            window.location.href = data.redirect_url;
+        });
+
+        socket.on('player_joined', (data) => {
+        const playerList = document.querySelector('ul');
+        playerList.innerHTML = '';
+        data.players.forEach(player => {
+            const listItem = document.createElement('li');
+            listItem.textContent = player;
+            playerList.appendChild(listItem);
+        });
+        });
+    </script>
+</body>
 </html>

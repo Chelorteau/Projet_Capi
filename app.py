@@ -9,9 +9,8 @@ from utils import load_backlog, save_backlog, calculate_estimation
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
 
-socketio = SocketIO(app) # intialize socketio
+socketio = SocketIO(app)
 
-# Liste des messages de chat pour chaque partie (optionnel, pour persistance)
 chat_logs = {}
 
 @socketio.on("connect")
@@ -24,26 +23,31 @@ def handle_message(data):
     message = data.get('message')
     player_name = session.get('player_name', 'Anonyme')
 
-    if not game_key or game_key not in games:
+    if not game_key or not message:
         return
 
-    # Sauvegarder le message dans les logs de la partie
     if game_key not in chat_logs:
         chat_logs[game_key] = []
     chat_logs[game_key].append({'player': player_name, 'message': message})
 
-    # Diffuser le message à tous les clients de cette partie
     emit('chat_message', {'player': player_name, 'message': message}, room=game_key)
 
 @socketio.on("join_room")
 def on_join(data):
     game_key = data.get('game_key')
+    player_name = session.get('player_name', 'Un joueur')
+
     if game_key and game_key in games:
         join_room(game_key)
-        # Envoyer l'historique des messages au nouvel utilisateur
-        if game_key in chat_logs:
-            emit('chat_history', chat_logs[game_key], room=request.sid)  # Uniquement à l'utilisateur
-        emit('chat_message', {'player': 'Système', 'message': f"{session.get('player_name', 'Un joueur')} a rejoint la partie."}, room=game_key)
+
+        if player_name not in games[game_key]['players']:
+            games[game_key]['players'][player_name] = {'ready': False}
+
+        #message de bienvenue en commentaire car duplication
+        #emit('chat_message', {'player': 'Système', 'message': f"{player_name} a rejoint la partie."}, room=game_key)
+
+        emit('player_joined', {'players': list(games[game_key]['players'].keys())}, room=game_key)
+
 
 
 @socketio.on("leave_room")
@@ -52,6 +56,7 @@ def on_leave(data):
     if game_key and game_key in games:
         leave_room(game_key)
         emit('chat_message', {'player': 'Système', 'message': f"{session.get('player_name', 'Un joueur')} a quitté la partie."}, room=game_key)
+
 
 games = {}
 
@@ -65,34 +70,34 @@ def reset_game_data():
         'votes': {},
         'current_index': 0,
         'mode': 'moyenne',
-        'ready': {},
-        'all_ready': False
+        'creator': None,
     }
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
-
 @app.route('/create', methods=['GET', 'POST'])
 def create():
     if request.method == 'POST':
         player_name = request.form.get('player_name')
         mode = request.form.get('mode')
-        
+
         if not player_name or not mode:
             return "Nom du joueur et mode requis", 400
 
         game_key = generate_key()
         games[game_key] = reset_game_data()
-        games[game_key]['players'][player_name] = {'ready': False}
+        games[game_key]['players'][player_name] = {'ready': False, 'role' : 'creator'}
         games[game_key]['mode'] = mode
-        
+        games[game_key]['creator'] = player_name
+
         session['game_key'] = game_key
         session['player_name'] = player_name
 
         return redirect(f'/lobby/{game_key}')
     return render_template('create.html')
+
 
 @app.route('/join', methods=['GET', 'POST'])
 def join():
@@ -114,31 +119,26 @@ def lobby(game_key):
     if game_key not in games:
         return "Partie non trouvée.", 404
 
-    return render_template('lobby.html', game_key=game_key, players=games[game_key]['players'])
+    creator = games[game_key]['creator']
+    return render_template('lobby.html', game_key=game_key, players=games[game_key]['players'], creator=creator)
 
-@app.route('/toggle_ready', methods=['POST'])
-def toggle_ready():
+@app.route('/start_game', methods=['POST'])
+def start_game():
     game_key = session.get('game_key')
     player_name = session.get('player_name')
-    
+
     if not game_key or not player_name:
         return jsonify({'error': 'Session invalide'}), 400
 
     if game_key not in games:
         return jsonify({'error': 'Partie introuvable'}), 404
 
-    game_data = games[game_key]
-    game_data['players'][player_name]['ready'] = not game_data['players'][player_name]['ready']
+    if games[game_key]['creator'] != player_name:
+        return jsonify({'error': 'Seul le créateur peut démarrer la partie'}), 403
 
-    all_ready = all(player['ready'] for player in game_data['players'].values())
-    game_data['all_ready'] = all_ready
+    socketio.emit('redirect', {'redirect_url': '/game'}, room=game_key)
+    return jsonify({'success': True})
 
-    return jsonify({'all_ready': all_ready})
-
-@app.route('/check_all_ready/<game_key>', methods=['GET'])
-def check_all_ready(game_key):
-    game_data = games.get(game_key, {})
-    return jsonify({'all_ready': game_data.get('all_ready', False)})
 
 @app.route('/game')
 def game():
@@ -154,49 +154,54 @@ def game():
         return redirect('/results')
 
     feature = game_data['backlog'][game_data['current_index']]
-    return render_template('game.html', feature=feature, game_key=game_key, player_name=player_name, players=game_data['players'], votes=game_data['votes'])
+    player_role = 'creator' if game_data['players'].get(player_name, {}).get('role') == 'creator' else 'player'
 
-@app.route('/submit_vote', methods=['POST'])
-def submit_vote():
-    game_key = session.get('game_key')
-    player_name = session.get('player_name')
-    vote = request.form.get('vote')
+    return render_template(
+        'game.html',
+        feature=feature,
+        game_key=game_key,
+        player_name=player_name,
+        player_role=player_role,
+        players=game_data['players'],
+        votes=game_data['votes']
+    )
 
-    if game_key and player_name:
+@app.route('/next_feature', methods=['POST'])
+def next_feature():
+    try:
+        game_key = session.get('game_key')
+        player_name = session.get('player_name')
+
+        if not game_key or not player_name:
+            return jsonify({'error': 'Session invalide'}), 400
+
         game_data = games.get(game_key)
         if not game_data:
             return jsonify({'error': 'Partie introuvable'}), 404
 
-        game_data['votes'][player_name] = vote
-
-        if len(game_data['votes']) == len(game_data['players']):
-            game_data['all_ready'] = True
-
-            estimation = calculate_estimation(game_data['votes'], game_data['mode'])
-            if estimation is not None:
-                game_data['backlog'][game_data['current_index']]['difficulty'] = estimation
-                game_data['backlog'][game_data['current_index']]['votes'] = game_data['votes'].copy()
-                game_data['current_index'] += 1
-                game_data['votes'].clear()
-                game_data['all_ready'] = False
-
-            return jsonify({'all_ready': True, 'next_feature': True})
+        if game_data['players'].get(player_name, {}).get('role') != 'creator':
+            return jsonify({'error': 'Permission refusée'}), 403
         
-        return jsonify({'all_ready': False, 'next_feature': False})
-    
-    return jsonify({'error': 'Invalid request'})
+        estimation = calculate_estimation(game_data['votes'], game_data['mode'])
+        if estimation is not None:
+            feature = game_data['backlog'][game_data['current_index']]
+            feature['difficulty'] = estimation
+            feature['votes'] = game_data['votes'].copy()
+            game_data['current_index'] += 1
+            game_data['votes'].clear()
 
+        if game_data['current_index'] >= len(game_data['backlog']):
+            socketio.emit('redirect', {'redirect_url': '/results'}, room=game_key)
+            return jsonify({'completed': True})
 
+        next_feature = game_data['backlog'][game_data['current_index']]
+        socketio.emit('update_feature', {'feature': next_feature}, room=game_key)
 
+        return jsonify({'success': True, 'next_feature': next_feature})
 
-@app.route('/check_votes/<game_key>', methods=['GET'])
-def check_votes(game_key):
-    game_data = games.get(game_key, {})
-    return jsonify({
-        'votes': game_data.get('votes', {}),
-        'all_ready': game_data.get('all_ready', False),
-        'current_index': game_data.get('current_index', 0)
-    })
+    except Exception as e:
+        print(f"Erreur dans next_feature : {e}")
+        return jsonify({'error': 'Erreur interne du serveur'}), 500
 
 
 
@@ -205,10 +210,67 @@ def results():
     game_key = session.get('game_key')
     if not game_key:
         return redirect('/')
-    
-    game_data = games[game_key]
-    return render_template('results.html', backlog=game_data['backlog'])
+
+    game_data = games.get(game_key)
+    if not game_data:
+        return "Partie introuvable", 404
+
+    return render_template('results.html', backlog=game_data['backlog'], game_key=game_key)
+
+
+@app.route('/submit_vote', methods=['POST'])
+def submit_vote():
+    game_key = session.get('game_key')
+    player_name = session.get('player_name')
+    vote = request.form.get('vote')
+
+    if not game_key or not player_name or not vote:
+        return jsonify({'error': 'Données invalides'}), 400
+
+    game_data = games.get(game_key)
+    if not game_data:
+        return jsonify({'error': 'Partie introuvable'}), 404
+
+    game_data['votes'][player_name] = int(vote) if vote.isdigit() else vote
+
+    feature = game_data['backlog'][game_data['current_index']]
+    feature_name = feature['name']
+
+    message = f"{player_name} a voté pour la fonctionnalité '{feature_name}."
+    chat_logs.setdefault(game_key, []).append({'player': 'Système', 'message': message})
+    socketio.emit('chat_message', {'player': 'Système', 'message': message}, room=game_key)
+
+    return jsonify({'success': True, 'votes': game_data['votes']})
+
+
+@app.route('/upload_features', methods=['POST'])
+def upload_features():
+    game_key = session.get('game_key')
+    player_name = session.get('player_name')
+
+    if not game_key or game_key not in games:
+        return jsonify({'error': 'Partie introuvable'}), 404
+
+    if 'file' not in request.files:
+        return jsonify({'error': 'Aucun fichier envoyé'}), 400
+
+    file = request.files['file']
+    try:
+        data = json.load(file)
+        if not isinstance(data, list) or not all('name' in f and 'description' in f for f in data):
+            raise ValueError("Format de fichier invalide")
+        
+        games[game_key]['backlog'] = data
+
+        message = f"{player_name} a importé un nouveau fichier JSON avec {len(data)} fonctionnalités."
+        chat_logs.setdefault(game_key, []).append({'player': 'Système', 'message': message})
+        socketio.emit('chat_message', {'player': 'Système', 'message': message}, room=game_key)
+
+        return jsonify({'success': True, 'features': data})
+    except Exception as e:
+        return jsonify({'error': f"Erreur lors de l'importation : {e}"}), 400
+
+
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)
-
+    socketio.run(app, host='0.0.0.0', port=5000)
