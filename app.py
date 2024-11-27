@@ -4,7 +4,7 @@ from flask_socketio import SocketIO, send, emit, join_room, leave_room
 import random
 import string
 import json
-from utils import load_backlog, save_backlog, calculate_estimation
+from utils import load_backlog, save_backlog, calculate_estimation, load_save, save_game
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
@@ -114,6 +114,30 @@ def join():
             return "Clé invalide.", 404
     return render_template('join.html')
 
+@app.route('/load', methods=['POST'])
+def load():
+    try:
+        save_data = load_save()
+        game_key = generate_key()
+
+        games[game_key] = {
+            'players': save_data['players'],
+            'mode': save_data['mode'],
+            'current_index': save_data['current_index'],
+            'backlog': save_data['backlog'],
+            'votes': {},
+            'creator': save_data.get('creator')
+        }
+
+        session['game_key'] = game_key
+        session['player_name'] = save_data.get('creator')
+        return redirect(f'/lobby/{game_key}')
+    except Exception as e:
+        print(f"Erreur lors du chargement de la partie : {e}")
+        return "Erreur lors du chargement de la partie", 500
+
+
+
 @app.route('/lobby/<game_key>')
 def lobby(game_key):
     if game_key not in games:
@@ -181,16 +205,35 @@ def next_feature():
 
         if game_data['players'].get(player_name, {}).get('role') != 'creator':
             return jsonify({'error': 'Permission refusée'}), 403
-        
+
+        if all(vote == 'cafe' for vote in game_data['votes'].values()):
+            save_game(
+                players=game_data['players'],
+                mode=game_data['mode'],
+                backlog=game_data['backlog'],
+                current_index=game_data['current_index']
+            )
+
+            socketio.emit('redirect', {'redirect_url': '/results'}, room=game_key)
+            return jsonify({'completed': True, 'reason': 'Tous les joueurs ont voté café'})
+
         estimation = calculate_estimation(game_data['votes'], game_data['mode'])
+
+        feature = game_data['backlog'][game_data['current_index']]
+        feature['votes'] = game_data['votes'].copy()
         if estimation is not None:
-            feature = game_data['backlog'][game_data['current_index']]
             feature['difficulty'] = estimation
-            feature['votes'] = game_data['votes'].copy()
-            game_data['current_index'] += 1
-            game_data['votes'].clear()
+
+        game_data['current_index'] += 1
+        game_data['votes'].clear()
 
         if game_data['current_index'] >= len(game_data['backlog']):
+            save_game(
+                players=game_data['players'],
+                mode=game_data['mode'],
+                backlog=game_data['backlog'],
+                current_index=game_data['current_index']
+            )
             socketio.emit('redirect', {'redirect_url': '/results'}, room=game_key)
             return jsonify({'completed': True})
 
@@ -202,7 +245,6 @@ def next_feature():
     except Exception as e:
         print(f"Erreur dans next_feature : {e}")
         return jsonify({'error': 'Erreur interne du serveur'}), 500
-
 
 
 @app.route('/results')
@@ -231,16 +273,20 @@ def submit_vote():
     if not game_data:
         return jsonify({'error': 'Partie introuvable'}), 404
 
-    game_data['votes'][player_name] = int(vote) if vote.isdigit() else vote
+    if vote not in ['?', 'cafe'] and not vote.isdigit():
+        return jsonify({'error': 'Vote non valide'}), 400
+
+    game_data['votes'][player_name] = vote
 
     feature = game_data['backlog'][game_data['current_index']]
     feature_name = feature['name']
 
-    message = f"{player_name} a voté pour la fonctionnalité '{feature_name}."
+    message = f"{player_name} a voté pour la fonctionnalité '{feature_name}' avec '{vote}'."
     chat_logs.setdefault(game_key, []).append({'player': 'Système', 'message': message})
     socketio.emit('chat_message', {'player': 'Système', 'message': message}, room=game_key)
 
     return jsonify({'success': True, 'votes': game_data['votes']})
+
 
 
 @app.route('/upload_features', methods=['POST'])

@@ -41,10 +41,50 @@
                 console.error('Erreur:', error);
             });
         }
+
+        function copyToClipboard() {
+            const gameKey = document.getElementById("gameKey").textContent;
+        
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(gameKey).then(() => {
+                    showCopyStatus("Clé copiée dans le presse-papier !");
+                }).catch(err => {
+                    console.error("Erreur lors de la copie avec clipboard API : ", err);
+                    showCopyStatus("Échec de la copie !");
+                });
+            } else {
+                try {
+                    const tempInput = document.createElement("input");
+                    tempInput.value = gameKey;
+                    document.body.appendChild(tempInput);
+                    tempInput.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(tempInput);
+                    showCopyStatus("Clé copiée dans le presse-papier !");
+                } catch (err) {
+                    console.error("Erreur lors de la copie avec fallback : ", err);
+                    showCopyStatus("Échec de la copie !");
+                }
+            }
+        }
+        
+        function showCopyStatus(message) {
+            const status = document.getElementById("copyStatus");
+            status.textContent = message;
+            status.style.display = "block";
+            setTimeout(() => {
+                status.style.display = "none";
+            }, 2000);
+        }
+        
     </script>
 </head>
 <body>
-    <h1>Lobby - Clé de la partie : {{ game_key }}</h1>
+    <h1>Lobby - Clé de la partie : <span id="gameKey">{{ game_key }}</span> 
+    <button onclick="copyToClipboard()">Copier la clé</button> </h1>
+    <p id="copyStatus" style="color: green; display: none;"></p>
+    
+
     <ul>
         {% for player, info in players.items() %}
         <li>{{ player }}</li>

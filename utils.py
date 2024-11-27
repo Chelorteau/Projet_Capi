@@ -9,11 +9,13 @@ def save_backlog(backlog):
         json.dump({'features': backlog}, file, indent=4)
 
 def save_game(players, mode, backlog, current_index):
+    creator = next((player for player, info in players.items() if info.get('role') == 'creator'), None)
     save_data = {
         "players": players,
         "mode": mode,
         "current_index": current_index,
-        "backlog": backlog
+        "backlog": backlog,
+        "creator": creator
     }
     with open('save.json', 'w') as file:
         json.dump(save_data, file, indent=4)
@@ -23,13 +25,10 @@ def load_save():
         return json.load(file)
 
 def calculate_estimation(votes, mode):
-    # Convertir tous les votes en nombres si possible
-    estimates = [int(v) for v in votes.values() if isinstance(v, int) or (isinstance(v, str) and v.isdigit())]
+    estimates = [int(v) for v in votes.values() if isinstance(v, str) and v.isdigit()]
 
     if not estimates:
         return None
-
-    estimates = list(map(int, estimates))
 
     if mode == 'moyenne':
         return round(sum(estimates) / len(estimates))
@@ -42,7 +41,12 @@ def calculate_estimation(votes, mode):
         return most_common if estimates.count(most_common) > len(estimates) // 2 else None
     elif mode == 'majorité_relative':
         return max(set(estimates), key=estimates.count)
+    elif mode == 'unanimité':
+        return estimates[0] if len(set(estimates)) == 1 else None
 
-    return None
+    raise ValueError(f"Mode de calcul inconnu : {mode}")
+
+
+
 
 

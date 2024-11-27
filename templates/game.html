@@ -7,7 +7,7 @@
             fetch('/submit_vote', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `vote=${vote}`
+                body: `vote=${encodeURIComponent(vote)}`
             })
             .then(response => response.json())
             .then(data => {
@@ -45,21 +45,14 @@
     <script>
         function nextFeature() {
             fetch('/next_feature', { method: 'POST' })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
+                .then(response => response.json())
                 .then(data => {
                     if (data.completed) {
                         window.location.href = '/results';
                     } else if (data.next_feature) {
                         location.reload();
                     } else if (data.error) {
-                        alert(data.error); // Affiche une alerte si un joueur n'a pas voté
-                    } else {
-                        console.error(data.error);
+                        alert(data.error);
                     }
                 })
                 .catch(error => console.error('Erreur:', error));
@@ -84,7 +77,7 @@
             document.querySelector('h2').textContent = "Description : " + data.feature.description;
             document.getElementById('votesList').textContent = '';
             document.getElementById('status').textContent = '';
-        });        
+        });
     </script>
 </body>
 </html>
