@@ -1,13 +1,16 @@
 import json
 
-def load_backlog():
-    with open('backlog.json', 'r') as file:
+# Charge une liste de fonctionnalités depuis un fichier JSON
+def load_backlog(file_path='backlog.json'):
+    with open(file_path, 'r') as file:
         return json.load(file)['features']
 
-def save_backlog(backlog):
-    with open('result.json', 'w') as file:
+# Sauvegarde une liste de fonctionnalités dans un fichier JSON
+def save_backlog(backlog, file_path='result.json'):
+    with open(file_path, 'w') as file:
         json.dump({'features': backlog}, file, indent=4)
 
+# Sauvegarde l'état actuel du jeu dans un fichier JSON
 def save_game(players, mode, backlog, current_index):
     creator = next((player for player, info in players.items() if info.get('role') == 'creator'), None)
     save_data = {
@@ -20,10 +23,12 @@ def save_game(players, mode, backlog, current_index):
     with open('save.json', 'w') as file:
         json.dump(save_data, file, indent=4)
 
-def load_save():
-    with open('save.json', 'r') as file:
+# Charge l'état sauvegardé d'un jeu depuis un fichier JSON
+def load_save(file_path='save.json'):
+    with open(file_path, 'r') as file:
         return json.load(file)
 
+# Calcule l'estimation d'une fonctionnalité selon le mode choisi (moyenne, médiane, etc.)
 def calculate_estimation(votes, mode):
     estimates = [int(v) for v in votes.values() if isinstance(v, str) and v.isdigit()]
 

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lobby</title>
+    <link rel="stylesheet" href="/static/styles.css">
     <script>
         function startGame() {
             fetch('/start_game', {
@@ -32,7 +33,6 @@
                 const status = document.getElementById('uploadStatus');
                 if (data.success) {
                     status.textContent = "Fichier importé avec succès !";
-                    //window.location.reload();
                 } else {
                     status.textContent = `Erreur : ${data.error}`;
                 }
@@ -71,18 +71,19 @@
         function showCopyStatus(message) {
             const status = document.getElementById("copyStatus");
             status.textContent = message;
+            status.className = "dynamic-message"; // Applique la classe CSS
             status.style.display = "block";
             setTimeout(() => {
-                status.style.display = "none";
-            }, 2000);
-        }
+                status.style.display = "none"; // Masque le message après 0.5 secondes
+            }, 500);
+        }        
         
     </script>
 </head>
 <body>
     <h1>Lobby - Clé de la partie : <span id="gameKey">{{ game_key }}</span> 
     <button onclick="copyToClipboard()">Copier la clé</button> </h1>
-    <p id="copyStatus" style="color: green; display: none;"></p>
+    <p id="copyStatus"></p>
     
 
     <ul>

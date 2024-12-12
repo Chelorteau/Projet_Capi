@@ -1,0 +1,267 @@
+/* poker-styles.css */
+
+/* Global Styles */
+body {
+    font-family: 'Georgia', serif;
+    margin: 0;
+    padding: 0;
+    background-color: #0b3d0b; /* Vert sombre, comme une table de poker */
+    color: white;
+    line-height: 1.6;
+}
+
+h1, h2, h3 {
+    color: #ffd700;
+    text-align: center;
+    text-shadow: 2px 2px #000;
+}
+
+a {
+    text-decoration: none;
+    color: #f0e68c;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Buttons */
+button {
+    background-color: #8b0000;
+    color: white;
+    border: 2px solid #ffd700;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    text-shadow: 1px 1px #000;
+    margin: 10px auto; /* Centrage horizontal et espace */
+    display: block;
+}
+
+button:hover {
+    background-color: #ff4500;
+    border-color: #ff6347;
+}
+
+/* Cards Container */
+.card-container {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 20px;
+}
+
+.card {
+    width: 120px;
+    height: 180px;
+    background-color: white;
+    border: 2px solid black;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    font-weight: bold;
+    color: black;
+}
+
+.card.red {
+    color: #8b0000;
+}
+
+/* Tables and Lists */
+table {
+    width: 80%;
+    margin: 20px auto;
+    border-collapse: collapse;
+    background-color: #2e8b57;
+    color: white;
+    text-align: center;
+}
+
+table th, table td {
+    padding: 15px;
+    border: 2px solid #ffd700;
+}
+
+table th {
+    background-color: #8b0000;
+    color: white;
+    text-shadow: 1px 1px #000;
+}
+
+table tr:nth-child(even) {
+    background-color: #006400; /* Vert foncé */
+}
+
+/* Chat Styles */
+#chat-container {
+    border: 2px solid #ffd700;
+    padding: 10px;
+    width: 300px;
+    height: 400px;
+    overflow-y: auto;
+    background: #2e8b57;
+    color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    margin: auto;
+}
+
+#chat-input {
+    width: calc(100% - 20px);
+    padding: 10px;
+    margin-top: 10px;
+    border: 2px solid #ffd700;
+    border-radius: 5px;
+    background-color: #0b3d0b;
+    color: white;
+}
+
+#send-btn {
+    width: 100%;
+    margin-top: 10px;
+    background-color: #8b0000;
+    color: white;
+    border: 2px solid #ffd700;
+    border-radius: 5px;
+}
+
+/* Liste des joueurs */
+ul {
+    list-style: none;
+    padding: 0;
+    margin: 20px auto;
+    text-align: center; /* Centrage */
+}
+
+ul li {
+    font-family: 'Georgia', serif;
+    font-size: 18px;
+    color: #ffd700; /* Or */
+    text-shadow: 1px 1px #000;
+    margin: 5px 0;
+}
+
+/* Forms */
+form {
+    max-width: 500px;
+    margin: 20px auto;
+    padding: 20px;
+    background: #2e8b57;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: white;
+}
+
+form input, form select {
+    width: 80%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 2px solid #ffd700;
+    border-radius: 5px;
+    background-color: #0b3d0b;
+    color: white;
+}
+
+/* Alignement des cartes */
+.vote-container {
+    display: flex;
+    justify-content: center; /* Centre les cartes horizontalement */
+    flex-wrap: wrap; /* Permet d’aller à la ligne si l’espace est insuffisant */
+    gap: 10px;
+    margin-top: 20px;
+}
+
+button.vote {
+    position: relative;
+    background-size: cover;
+    background-position: center;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    width: 100px;
+    height: 140px;
+    overflow: hidden;
+    color: transparent; /* Cache le texte visuellement */
+    text-shadow: none; /* Empêche les ombres de texte */
+    font-size: 0; /* Réduit la taille du texte à 0 */
+}
+
+button.vote:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.7);
+}
+
+/*Affichage de l'image des cartes à la place des boutons classiques*/
+button.vote[data-value="0"] { background-image: url('/static/cartes/cartes_0.svg'); }
+button.vote[data-value="1"] { background-image: url('/static/cartes/cartes_1.svg'); }
+button.vote[data-value="2"] { background-image: url('/static/cartes/cartes_2.svg'); }
+button.vote[data-value="3"] { background-image: url('/static/cartes/cartes_3.svg'); }
+button.vote[data-value="5"] { background-image: url('/static/cartes/cartes_5.svg'); }
+button.vote[data-value="8"] { background-image: url('/static/cartes/cartes_8.svg'); }
+button.vote[data-value="13"] { background-image: url('/static/cartes/cartes_13.svg'); }
+button.vote[data-value="20"] { background-image: url('/static/cartes/cartes_20.svg'); }
+button.vote[data-value="40"] { background-image: url('/static/cartes/cartes_40.svg'); }
+button.vote[data-value="100"] { background-image: url('/static/cartes/cartes_100.svg'); }
+button.vote[data-value="cafe"] { background-image: url('/static/cartes/cartes_cafe.svg'); }
+button.vote[data-value="?"] { background-image: url('/static/cartes/cartes_interro.svg'); }
+
+/* Messages dynamiques */
+.dynamic-message {
+    font-family: 'Georgia', serif;
+    font-size: 16px;
+    color: #ffd700;
+    text-align: center;
+    margin-top: 10px;
+    padding: 5px 10px;
+    border: 1px solid #ffd700;
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 5px;
+    display: inline-block;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    animation: fadeOut 0.5s ease forwards; /* Disparition automatique */
+}
+
+/* Animation pour masquer progressivement */
+@keyframes fadeOut {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    body {
+        flex-direction: column;
+        padding: 10px;
+        height: auto; /* Permettre le scroll si nécessaire */
+    }
+
+    #chat-container {
+        width: 90%;
+        height: 60%;
+    }
+
+    button.vote {
+        width: 80px;
+        height: 120px;
+    }
+}

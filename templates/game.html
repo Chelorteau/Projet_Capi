@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Vote pour la fonctionnalité</title>
+    <link rel="stylesheet" href="/static/styles.css">
     <script>
         function submitVote(vote) {
             fetch('/submit_vote', {
@@ -11,14 +12,23 @@
             })
             .then(response => response.json())
             .then(data => {
+                const statusElement = document.getElementById('status');
                 if (data.success) {
-                    document.getElementById('status').textContent = "Vote enregistré";
+                    // Mise à jour du message et application du style
+                    statusElement.textContent = "Vote enregistré)";
+                    statusElement.className = "dynamic-message"; // Applique la classe CSS
+                    statusElement.style.display = "block"; // Affiche le message
+                    // Masque le message après 0.5 secondes
+                    setTimeout(() => {
+                        statusElement.style.display = "none";
+                    }, 500);
                 } else {
                     console.error(data.error);
                 }
             })
             .catch(error => console.error('Erreur:', error));
         }
+        
     </script>
 </head>
 <body>
@@ -29,10 +39,10 @@
         <!-- Liste des votes visibles -->
     </div>
 
-    <div>
+    <div class="vote-container">
         <!-- Boutons pour voter -->
         {% for value in [0, 1, 2, 3, 5, 8, 13, 20, 40, 100, 'cafe', '?'] %}
-        <button onclick="submitVote('{{ value }}')">{{ value }}</button>
+        <button class ="vote" data-value={{value}} onclick="submitVote('{{ value }}')">{{ value }}</button>
         {% endfor %}
     </div>
     <p id="status"></p>

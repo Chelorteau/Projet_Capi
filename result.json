@@ -1,31 +1,8 @@
 {
     "features": [
         {
-            "id": 1,
-            "name": "Feature A",
-            "description": "Implement login system",
-            "difficulty": 5,
-            "votes": {
-                "Thibaud": 5
-            }
-        },
-        {
-            "id": 2,
-            "name": "Feature B",
-            "description": "Develop user profile",
-            "difficulty": 13,
-            "votes": {
-                "Thibaud": 13
-            }
-        },
-        {
-            "id": 3,
-            "name": "Feature C",
-            "description": "Add chat functionality",
-            "difficulty": 20,
-            "votes": {
-                "Thibaud": 20
-            }
+            "name": "Feature 1",
+            "description": "Description 1"
         }
     ]
 }

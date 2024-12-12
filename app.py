@@ -1,3 +1,4 @@
+# Importation des bibliothèques nécessaires
 from flask import Flask, render_template, request, redirect, session, jsonify
 from flask_socketio import SocketIO, send, emit, join_room, leave_room
 
@@ -13,10 +14,12 @@ socketio = SocketIO(app)
 
 chat_logs = {}
 
+# Gère la connexion d'un utilisateur au serveur
 @socketio.on("connect")
 def on_connect():
     print("Un utilisateur s'est connecté.")
 
+# Gère les messages envoyés par les utilisateurs dans un salon de discussion
 @socketio.on("message")
 def handle_message(data):
     game_key = data.get('game_key')
@@ -32,6 +35,7 @@ def handle_message(data):
 
     emit('chat_message', {'player': player_name, 'message': message}, room=game_key)
 
+# Permet à un utilisateur de rejoindre une salle de jeu
 @socketio.on("join_room")
 def on_join(data):
     game_key = data.get('game_key')
@@ -43,13 +47,13 @@ def on_join(data):
         if player_name not in games[game_key]['players']:
             games[game_key]['players'][player_name] = {'ready': False}
 
-        #message de bienvenue en commentaire car duplication
-        #emit('chat_message', {'player': 'Système', 'message': f"{player_name} a rejoint la partie."}, room=game_key)
+        # message de bienvenue en commentaire car duplication
+        # emit('chat_message', {'player': 'Système', 'message': f"{player_name} a rejoint la partie."}, room=game_key)
 
         emit('player_joined', {'players': list(games[game_key]['players'].keys())}, room=game_key)
 
 
-
+# Permet à un utilisateur de quitter une salle de jeu
 @socketio.on("leave_room")
 def on_leave(data):
     game_key = data.get('game_key')
@@ -60,9 +64,11 @@ def on_leave(data):
 
 games = {}
 
+# Génère une clé unique pour identifier une partie
 def generate_key():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
+# Initialise les données d'une partie
 def reset_game_data():
     return {
         'players': {},
@@ -73,10 +79,12 @@ def reset_game_data():
         'creator': None,
     }
 
+# Page d'accueil
 @app.route('/')
 def index():
     return render_template('index.html')
 
+# Permet de créer une nouvelle partie
 @app.route('/create', methods=['GET', 'POST'])
 def create():
     if request.method == 'POST':
@@ -98,7 +106,7 @@ def create():
         return redirect(f'/lobby/{game_key}')
     return render_template('create.html')
 
-
+# Permet de rejoindre une partie existante
 @app.route('/join', methods=['GET', 'POST'])
 def join():
     if request.method == 'POST':
@@ -114,6 +122,7 @@ def join():
             return "Clé invalide.", 404
     return render_template('join.html')
 
+# Charge une partie sauvegardée depuis un fichier
 @app.route('/load', methods=['POST'])
 def load():
     try:
@@ -137,7 +146,7 @@ def load():
         return "Erreur lors du chargement de la partie", 500
 
 
-
+# Affiche le lobby d'une partie
 @app.route('/lobby/<game_key>')
 def lobby(game_key):
     if game_key not in games:
@@ -146,6 +155,7 @@ def lobby(game_key):
     creator = games[game_key]['creator']
     return render_template('lobby.html', game_key=game_key, players=games[game_key]['players'], creator=creator)
 
+# Démarre une partie
 @app.route('/start_game', methods=['POST'])
 def start_game():
     game_key = session.get('game_key')
@@ -163,7 +173,7 @@ def start_game():
     socketio.emit('redirect', {'redirect_url': '/game'}, room=game_key)
     return jsonify({'success': True})
 
-
+# Affiche l'interface de jeu pour une partie en cours
 @app.route('/game')
 def game():
     game_key = session.get('game_key')
@@ -190,6 +200,7 @@ def game():
         votes=game_data['votes']
     )
 
+# Passe à la fonctionnalité suivante dans le backlog
 @app.route('/next_feature', methods=['POST'])
 def next_feature():
     try:
@@ -246,7 +257,7 @@ def next_feature():
         print(f"Erreur dans next_feature : {e}")
         return jsonify({'error': 'Erreur interne du serveur'}), 500
 
-
+# Affiche les résultats finaux de la partie
 @app.route('/results')
 def results():
     game_key = session.get('game_key')
@@ -259,7 +270,7 @@ def results():
 
     return render_template('results.html', backlog=game_data['backlog'], game_key=game_key)
 
-
+# Soumet un vote pour une fonctionnalité en cours
 @app.route('/submit_vote', methods=['POST'])
 def submit_vote():
     game_key = session.get('game_key')
@@ -288,7 +299,7 @@ def submit_vote():
     return jsonify({'success': True, 'votes': game_data['votes']})
 
 
-
+# Permet de charger un fichier JSON contenant des fonctionnalités
 @app.route('/upload_features', methods=['POST'])
 def upload_features():
     game_key = session.get('game_key')

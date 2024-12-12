@@ -2,31 +2,18 @@
 <html>
 <head>
     <title>Planning Poker</title>
+    <link rel="stylesheet" href="/static/styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
 </head>
 <body>
     <h1>Bienvenue au Planning Poker</h1>
-    <a href="/create">Commencer une nouvelle partie</a>
+    <button onclick="location.href='/create'">Commencer une nouvelle partie</button>
     <p> </p>
-    <a href="/join">Rejoindre une nouvelle partie</a>
+    <button onclick="location.href='/join'">Rejoindre une nouvelle partie</button>
     <p> </p>
     <form action="/load" method="post">
         <button type="submit">Charger une partie sauvegardée</button>
     </form>
 </body>
 </html>
-<script>
-    const socket = io();
-
-    function sendMessage() {
-        const message = document.getElementById("message").value;
-        socket.send(message);
-        document.getElementById("message").value = '';
-    }
-
-    socket.on("message", (msg) => {
-        const chat = document.getElementById("chat");
-        chat.innerHTML += `<p>${msg}</p>`;
-    });
-</script>
 

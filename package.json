@@ -1,0 +1,16 @@
+{
+  "name": "projet_capi",
+  "version": "1.0.0",
+  "main": "chat.test.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "jsdom": "^25.0.1"
+  }
+}

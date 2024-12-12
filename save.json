@@ -1,14 +1,11 @@
 {
     "players": {
-        "qsd": {
+        "az": {
             "ready": false,
             "role": "creator"
-        },
-        "bdh": {
-            "ready": false
         }
     },
-    "mode": "unanimit\u00e9",
+    "mode": "moyenne",
     "current_index": 3,
     "backlog": [
         {
@@ -16,28 +13,28 @@
             "name": "Feature A",
             "description": "Implement login system",
             "votes": {
-                "qsd": "40"
+                "az": "8"
             },
-            "difficulty": 40
+            "difficulty": 8
         },
         {
             "id": 2,
             "name": "Feature B",
             "description": "Develop user profile",
             "votes": {
-                "qsd": "100"
+                "az": "13"
             },
-            "difficulty": 100
+            "difficulty": 13
         },
         {
             "id": 3,
             "name": "Feature C",
             "description": "Add chat functionality",
             "votes": {
-                "qsd": "13"
+                "az": "20"
             },
-            "difficulty": 13
+            "difficulty": 20
         }
     ],
-    "creator": "qsd"
+    "creator": "az"
 }
